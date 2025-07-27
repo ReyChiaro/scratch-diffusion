@@ -1,6 +1,8 @@
 # scratch-diffusion
 A repository for understanding, implementing denoise-diffusion/flow-matching models.
 
+You can check the [blog](https://reychiaro.github.io/2025/07/04/paper-read/generation/) for better rendering.
+
 ## References
 
 [Step-by-Step Diffusion: An Elementary Tutorial](https://arxiv.org/abs/2406.08929v2)
