@@ -11,6 +11,37 @@ class ReLU:
         return jnp.where(x > 0, x, 0.0)
 
 
+class Embeddings:
+
+    def __init__(
+        self,
+        random_key,
+        num_embeds: int,
+        embed_dim: int,
+    ):
+        self.weights = jax.random.normal(random_key, (num_embeds, embed_dim))
+
+    def __call__(self, i):
+        return self.weights[i]
+
+
+class Linear:
+
+    def __init__(
+        self,
+        random_key,
+        in_channels: int,
+        out_channels: int,
+    ):
+        self.weights = jax.random.normal(random_key, (in_channels, out_channels))
+        self.bias = jnp.zeros((out_channels,))
+    
+    def __call__(self, x):
+        x = jnp.dot(x, self.weights)
+        x = x + self.bias
+        return x
+
+
 class Conv2D:
 
     def __init__(
@@ -34,7 +65,6 @@ class Conv2D:
             dtype=jnp.float32,
         )
         self.bias = jnp.zeros((out_channels,))
-        self.act_fn = ReLU()
 
     def __call__(self, x):
         x = lax.conv_general_dilated(
@@ -45,4 +75,4 @@ class Conv2D:
             dimension_numbers=("NCHW", "OIHW", "NCHW"),
         )
         x = x + self.bias
-        return self.act_fn(x)
+        return x

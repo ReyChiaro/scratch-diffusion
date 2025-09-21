@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from typing import Literal
 
-from .modules import ReLU, Conv2D
+from .modules import Conv2D, Embeddings, Linear, ReLU
 
 
 class ConvBlock:
@@ -41,12 +41,13 @@ class ConvBlock:
             stride=last_stride,
             padding=last_padding,
         )
+        self.act_fn = ReLU()
 
     def __call__(self, x):
         for conv in self.convs:
             x = conv(x)
         x = self.last_conv(x)
-        return x
+        return self.act_fn(x)
 
 
 class UNetBlock:
@@ -59,6 +60,7 @@ class UNetBlock:
         channels: list[list[int]],
         strides: list[int],
         paddings: Literal["SAME", "VALID"],
+        time_embed_dim: int,
         return_features: bool = False,
         last_channels: list[int] = None,
         last_strides: list[int] = None,
@@ -67,6 +69,7 @@ class UNetBlock:
         self.num_blocks = num_blocks
         self.return_features = return_features
 
+        self.t_linear = Linear(random_key, time_embed_dim, channels[0])
         self.blocks = [
             ConvBlock(
                 random_key,
@@ -81,8 +84,9 @@ class UNetBlock:
             for b in range(num_blocks)
         ]
 
-    def __call__(self, x):
+    def __call__(self, x, t_embeds):
         cached_x = []
+        x = x + self.t_linear(t_embeds)
         for block in self.blocks:
             x = block(x)
             if self.return_features:
@@ -94,18 +98,29 @@ class UNetBlock:
 
 class UNet:
 
-    def __init__(self, random_key, down_args, middle_args, up_args, conv_args):
+    def __init__(
+        self,
+        random_key,
+        embed_args,
+        down_args,
+        middle_args,
+        up_args,
+        conv_args,
+    ):
+        self.time_embeds = Embeddings(random_key=random_key, **embed_args)
         self.down_block = UNetBlock(random_key=random_key, return_features=True, **down_args)
         self.middle_block = UNetBlock(random_key=random_key, **middle_args)
         self.up_block = UNetBlock(random_key=random_key, **up_args)
         self.last_convs = ConvBlock(random_key=random_key, **conv_args)
 
-    def __call__(self, x):
-        x, cached_x = self.down_block(x)
-        x = self.middle_block(x)
+    def __call__(self, x, t):
+
+        t_embeds = self.time_embeds(t)
+        x, cached_x = self.down_block(x, t_embeds)
+        x = self.middle_block(x, t_embeds)
 
         up_block_inputs = jnp.concatenate([x, cached_x], axis=-1)
-        x = self.up_block(up_block_inputs)
+        x = self.up_block(up_block_inputs, t_embeds)
 
         x = self.last_convs(x)
 
