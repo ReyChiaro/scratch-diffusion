@@ -1,3 +1,4 @@
+import jax
 import jax.lax as lax
 import jax.numpy as jnp
 
@@ -22,13 +23,16 @@ def get_beta(alpha: Array) -> Array:
     return lax.sqrt(1.0 - alpha**2)
 
 
+@jax.jit
 def get_xt(x0: Array, noise: Array, alpha_bar: Array, beta_bar: Array) -> Array:
     return alpha_bar * x0 + beta_bar * noise
 
 
+@jax.jit
 def get_xt_1(xt: Array, noise: Array, alpha: Array, beta: Array) -> Array:
     return (xt - beta * noise) / alpha
 
 
+@jax.jit
 def loss_fn(preds: Array, targets: Array) -> Array:
     return jnp.mean((preds - targets) ** 2)

@@ -24,6 +24,9 @@ class Embeddings:
     def __call__(self, i):
         return self.weights[i]
 
+    def named_parameters(self):
+        return {"weights": self.weights}
+
 
 class Linear:
 
@@ -35,11 +38,14 @@ class Linear:
     ):
         self.weights = jax.random.normal(random_key, (in_channels, out_channels))
         self.bias = jnp.zeros((out_channels,))
-    
+
     def __call__(self, x):
         x = jnp.dot(x, self.weights)
         x = x + self.bias
         return x
+
+    def named_parameters(self):
+        return {"weights": self.weights, "bias": self.bias}
 
 
 class Conv2D:
@@ -76,3 +82,6 @@ class Conv2D:
         )
         x = x + self.bias
         return x
+
+    def named_parameters(self):
+        return {"weights": self.weights, "bias": self.bias}

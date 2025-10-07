@@ -49,6 +49,17 @@ class ConvBlock:
         x = self.last_conv(x)
         return self.act_fn(x)
 
+    def named_parameters(self):
+        param_dict = {}
+        for i, conv in self.convs:
+            conv_param_dict = conv.named_parameters()
+            for k, v in conv_param_dict.items():
+                param_dict[f"convs.{i}.{k}"] = v
+        last_conv_param_dict = self.last_conv.named_parameters()
+        for k, v in last_conv_param_dict.items():
+            param_dict[f"last_conv.{k}"] = v
+        return param_dict
+
 
 class UNetBlock:
 
@@ -95,6 +106,16 @@ class UNetBlock:
             return x, cached_x
         return x
 
+    def named_parameters(self):
+        param_dict = {}
+        for k, v in self.t_linear.named_parameters().items():
+            param_dict[f"t_linear.{k}"] = v
+        for i, b in self.blocks:
+            block_param_dict = b.named_parameters()
+            for k, v in block_param_dict.items():
+                param_dict[f"blocks.{i}.{k}"] = v
+        return param_dict
+
 
 class UNet:
 
@@ -125,3 +146,17 @@ class UNet:
         x = self.last_convs(x)
 
         return x
+
+    def named_parameters(self):
+        param_dict = {}
+        for k, v in self.time_embeds.named_parameters().items():
+            param_dict[f"time_embeds.{k}"] = v
+        for k, v in self.down_block.named_parameters().items():
+            param_dict[f"down_block.{k}"] = v
+        for k, v in self.middle_block.named_parameters().items():
+            param_dict[f"middle_block.{k}"] = v
+        for k, v in self.up_block.named_parameters().items():
+            param_dict[f"up_block.{k}"] = v
+        for k, v in self.last_convs.named_parameters().items():
+            param_dict[f"last_conv.{k}"] = v
+        return param_dict
